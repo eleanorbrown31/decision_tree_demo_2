@@ -31,17 +31,20 @@ if 'experiment_configured' not in st.session_state:
 with st.sidebar.expander("📊 Define Your Features", expanded=not st.session_state.experiment_configured):
     st.write("**Features** are the characteristics you'll use to make predictions (like age, preferences, etc.)")
     
-    # Add new feature
+    # Feature type selector outside the form for real-time updates
+    feature_name = st.text_input("Feature name (e.g., 'Age', 'Favourite Colour')")
+    feature_type = st.selectbox("Feature type", ["Categorical", "Numerical"])
+    
+    # Add new feature form with dynamic content
     with st.form("add_feature"):
-        feature_name = st.text_input("Feature name (e.g., 'Age', 'Favourite Colour')")
-        feature_type = st.selectbox("Feature type", ["Categorical", "Numerical"])
-        
         if feature_type == "Categorical":
             options_text = st.text_input("Options (comma-separated)", placeholder="Red, Blue, Green")
+            min_val, max_val = None, None
         else:
             col1, col2 = st.columns(2)
             min_val = col1.number_input("Min value", value=0)
             max_val = col2.number_input("Max value", value=10)
+            options_text = None
         
         if st.form_submit_button("Add Feature"):
             if feature_name:
@@ -49,11 +52,14 @@ with st.sidebar.expander("📊 Define Your Features", expanded=not st.session_st
                     'name': feature_name,
                     'type': feature_type
                 }
-                if feature_type == "Categorical":
+                if feature_type == "Categorical" and options_text:
                     feature_config['options'] = [opt.strip() for opt in options_text.split(',') if opt.strip()]
-                else:
+                elif feature_type == "Numerical":
                     feature_config['min'] = min_val
                     feature_config['max'] = max_val
+                else:
+                    st.error("Please provide valid options for categorical features")
+                    st.stop()
                 
                 st.session_state.features.append(feature_config)
                 st.success(f"Added feature: {feature_name}")
