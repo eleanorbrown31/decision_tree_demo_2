@@ -5,8 +5,7 @@ from sklearn import tree
 import matplotlib.pyplot as plt
 import graphviz
 from sklearn.tree import export_graphviz
-import plotly.express as px
-import plotly.graph_objects as go
+import seaborn as sns
 
 # Set up the app
 st.set_page_config(page_title="Interactive Decision Tree Workshop", layout="wide")
@@ -209,9 +208,8 @@ elif st.session_state.experiment_configured:
             # Show data distribution
             if len(display_df) > 0:
                 target_counts = display_df[st.session_state.target_variable].value_counts()
-                fig = px.pie(values=target_counts.values, names=target_counts.index, 
-                           title=f"Distribution of {st.session_state.target_variable}")
-                st.plotly_chart(fig, use_container_width=True)
+                st.write(f"**Distribution of {st.session_state.target_variable}:**")
+                st.bar_chart(target_counts)
         else:
             st.info("No data collected yet. Add some data points to train the model!")
     
@@ -266,11 +264,10 @@ elif st.session_state.experiment_configured:
             importance_df = pd.DataFrame({
                 'Feature': [f['name'] for f in st.session_state.features],
                 'Importance': clf.feature_importances_
-            }).sort_values('Importance', ascending=True)
+            }).sort_values('Importance', ascending=False)
             
-            fig = px.bar(importance_df, x='Importance', y='Feature', orientation='h',
-                        title="Which features matter most?")
-            st.plotly_chart(fig, use_container_width=True)
+            st.write("**Which features matter most?**")
+            st.bar_chart(importance_df.set_index('Feature'))
         
         with col2:
             st.subheader("🔮 Make Predictions")
@@ -328,9 +325,8 @@ elif st.session_state.experiment_configured:
                         'Outcome': st.session_state.target_options,
                         'Probability': prediction_prob
                     })
-                    fig = px.bar(prob_df, x='Outcome', y='Probability', 
-                               title="Prediction Probabilities")
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.write("**Prediction Probabilities:**")
+                    st.bar_chart(prob_df.set_index('Outcome'))
     
     else:
         st.warning(f"⏳ Need at least {min_samples} data points to train the model. You have {len(st.session_state.data)}.")
@@ -398,10 +394,16 @@ elif st.session_state.experiment_configured:
                 
                 if predictions_list:
                     pred_df = pd.DataFrame(predictions_list)
-                    fig = px.bar(pred_df, x=selected_feature, y='Confidence', 
-                               color='Predicted_Class',
-                               title=f"How {selected_feature} affects predictions")
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.write(f"**How {selected_feature} affects predictions:**")
+                    
+                    # Create a simple chart showing predictions
+                    chart_data = pred_df.pivot_table(
+                        index=selected_feature, 
+                        columns='Predicted_Class', 
+                        values='Confidence', 
+                        fill_value=0
+                    )
+                    st.bar_chart(chart_data)
         
         with tabs[1]:
             st.write("Explore patterns in your data:")
@@ -411,10 +413,31 @@ elif st.session_state.experiment_configured:
                 feature2 = st.selectbox("Y-axis feature:", [f['name'] for f in st.session_state.features], index=1)
                 
                 if feature1 != feature2:
-                    fig = px.scatter(st.session_state.data, x=feature1, y=feature2, 
-                                   color=st.session_state.target_variable,
-                                   title=f"{feature1} vs {feature2}")
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.write(f"**{feature1} vs {feature2}**")
+                    
+                    # Create scatter plot with matplotlib
+                    fig, ax = plt.subplots(figsize=(8, 6))
+                    
+                    # Get unique target values and assign colours
+                    unique_targets = st.session_state.data[st.session_state.target_variable].unique()
+                    colours = plt.cm.Set1(np.linspace(0, 1, len(unique_targets)))
+                    
+                    for i, target in enumerate(unique_targets):
+                        mask = st.session_state.data[st.session_state.target_variable] == target
+                        ax.scatter(
+                            st.session_state.data[mask][feature1], 
+                            st.session_state.data[mask][feature2],
+                            c=[colours[i]], 
+                            label=target,
+                            alpha=0.7
+                        )
+                    
+                    ax.set_xlabel(feature1)
+                    ax.set_ylabel(feature2)
+                    ax.legend()
+                    ax.set_title(f"{feature1} vs {feature2}")
+                    st.pyplot(fig)
+                    plt.close()
         
         with tabs[2]:
             st.write("🧪 **Try these experiments:**")
