@@ -303,7 +303,7 @@ elif st.session_state.experiment_configured:
                     pred_input = np.array([pred_input])
                     
                     # Make prediction
-                    prediction = clf.predict(pred_input)[0]
+                    prediction = int(clf.predict(pred_input)[0])
                     prediction_prob = clf.predict_proba(pred_input)[0]
                     
                     predicted_class = st.session_state.target_options[prediction]
@@ -383,7 +383,7 @@ elif st.session_state.experiment_configured:
                                 pred_input.append(test_input[feature['name']])
                         
                         pred_input = np.array([pred_input])
-                        prediction = clf.predict(pred_input)[0]
+                        prediction = int(clf.predict(pred_input)[0])
                         pred_prob = clf.predict_proba(pred_input)[0]
                         
                         predictions_list.append({
