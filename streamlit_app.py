@@ -5,7 +5,7 @@ from sklearn import tree
 import matplotlib.pyplot as plt
 import graphviz
 from sklearn.tree import export_graphviz
-import seaborn as sns
+
 
 # Set up the app
 st.set_page_config(page_title="Interactive Decision Tree Workshop", layout="wide")
